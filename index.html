@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Carnet alimentaire</title>
+<meta name="description" content="Journal des repas de Melissa, vérifié avec les règles de sa nutritionniste.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Carnet">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F3F3F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#13141D" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@500&family=Young+Serif&display=swap">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+/* Layout : une colonne façon carnet, frise horaire du jour avec les repères d'heure limite, onglets en bas pour le téléphone */
+:root{
+  --bg:#F3F3F8; --surface:#FFFFFF; --ink:#1D1E30; --muted:#666880; --line:#E0E0EB;
+  --accent:#3A3F95; --accent-ink:#FFFFFF; --accent-soft:#E7E8F6;
+  --ok:#2C7A4C; --ok-soft:#E2F1E7; --warn:#9A5A06; --warn-soft:#FAEDD6; --bad:#B0281F; --bad-soft:#FAE3E1;
+  --scrim:rgba(14,14,32,.45);
+  --f-display:"Young Serif", Georgia, "Times New Roman", serif;
+  --f-body:"Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-data:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#13141D; --surface:#1C1D2A; --ink:#ECECF4; --muted:#9C9EB6; --line:#2D2E40;
+    --accent:#A5AAF3; --accent-ink:#15162E; --accent-soft:#272A4C;
+    --ok:#6FCB93; --ok-soft:#1B3326; --warn:#EAB45F; --warn-soft:#3A2B13; --bad:#F2877E; --bad-soft:#3E1D1B;
+    --scrim:rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#13141D; --surface:#1C1D2A; --ink:#ECECF4; --muted:#9C9EB6; --line:#2D2E40;
+  --accent:#A5AAF3; --accent-ink:#15162E; --accent-soft:#272A4C;
+  --ok:#6FCB93; --ok-soft:#1B3326; --warn:#EAB45F; --warn-soft:#3A2B13; --bad:#F2877E; --bad-soft:#3E1D1B;
+  --scrim:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:600px;margin:0 auto;padding-inline:16px;padding-block:4px 176px}
+
+/* En-tête */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:600px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-family:var(--f-display);font-size:19px;letter-spacing:-.01em;white-space:nowrap}
+.sync{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);white-space:nowrap}
+.sync::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.sync[data-s="cloud"]::before{background:var(--ok)}
+.sync[data-s="local"]::before{background:var(--accent)}
+.sync[data-s="ro"]::before,.sync[data-s="err"]::before{background:var(--warn)}
+
+/* Accueil */
+.welcome{margin-top:16px;padding:16px 18px;border-radius:var(--r);background:var(--accent-soft);display:flex;flex-direction:column;gap:4px}
+.welcome .w-hello{font-family:var(--f-display);font-weight:400;font-size:23px;line-height:1.2;margin:0;text-wrap:balance}
+.welcome .w-hello em{font-style:normal;color:var(--accent)}
+.welcome .w-msg{margin:0;font-size:15px;max-width:52ch}
+.menu{margin-top:8px}
+.menu summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:14.5px;padding-block:4px}
+.menu-text{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:8px;padding:12px 14px;background:var(--surface);border-radius:10px;font-size:14.5px;line-height:1.55}
+.weekstats{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;margin:-6px 0 14px}
+.wk-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);width:100%;text-align:center}
+.stat b{font-family:var(--f-data);font-weight:500}
+.stat.full{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.rgroup{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.rgroup:last-child{border-bottom:1px solid var(--line);margin-bottom:12px}
+.rgroup .chips{margin:0}
+.tpill.meal{color:var(--accent);background:var(--accent-soft);font-family:var(--f-body);font-weight:700}
+.addrow .input.n{flex:0 0 76px}
+.wnames{color:var(--muted);font-size:13px}
+.over{color:var(--bad)}
+.box[data-kind="meal"] h3::before{background:var(--warn)}
+.box[data-kind="weekly"] h3::before{background:var(--accent)}
+#weeklyList{margin-bottom:12px}
+#weeklyList li:first-child{border-top:1px solid var(--line)}
+
+/* Journal du jour */
+.daynav{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;padding-block:18px 8px}
+.daynav h1{font-family:var(--f-display);font-weight:400;font-size:28px;line-height:1.15;margin:0;text-align:center;text-wrap:balance}
+.daysub{display:flex;justify-content:center;margin-top:2px;color:var(--muted);font-size:14px;min-height:22px}
+.linkbtn{border:0;background:none;padding:0;color:var(--accent);font-weight:700;font-size:14px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.iconbtn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;font-size:22px;line-height:1;padding:0}
+.iconbtn svg{width:20px;height:20px}
+.iconbtn:disabled{opacity:.35;cursor:default}
+.iconbtn.sm{width:40px;height:40px;font-size:20px;color:var(--muted)}
+.daystats{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-bottom:14px;min-height:8px}
+.stat{font-size:13px;padding:4px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.stat.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent;font-weight:700}
+.stat.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent;font-weight:700}
+
+.banner{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);font-size:14.5px;margin-bottom:18px}
+.banner.active{background:var(--warn-soft)}
+.banner p{margin:0}
+.banner .bt{font-family:var(--f-data);font-weight:500}
+
+.tag{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.02em;padding:2px 8px;border-radius:999px;vertical-align:1px;white-space:nowrap;font-family:var(--f-body);font-style:normal}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+
+.timeline{list-style:none;margin:0;padding:0 0 0 22px;position:relative;display:flex;flex-direction:column;gap:12px}
+.timeline::before{content:"";position:absolute;left:5px;top:10px;bottom:10px;width:2px;border-radius:2px;background:var(--line)}
+.tl-meal{position:relative}
+.tl-meal::before{content:"";position:absolute;left:-22px;top:17px;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--accent)}
+.tl-meal.has-bad::before{border-color:var(--bad);background:var(--bad)}
+.tl-cut{position:relative;display:flex;align-items:center;gap:8px;color:var(--warn);font-size:13px;padding-block:2px}
+.tl-cut::before{content:"";position:absolute;left:-21px;top:50%;width:10px;height:10px;margin-top:-5px;transform:rotate(45deg);background:var(--warn)}
+.tl-cut .bt{font-family:var(--f-data);font-weight:500}
+.tl-cut .cut-text{min-width:0}
+.tl-cut .cut-line{flex:1;min-width:16px;border-top:1px dashed currentColor;opacity:.55}
+
+.meal-card{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px 14px;cursor:pointer}
+.meal-card:hover{border-color:var(--accent)}
+.meal-card[aria-disabled="true"]{cursor:default}
+.meal-card[aria-disabled="true"]:hover{border-color:var(--line)}
+.meal-head{display:flex;align-items:baseline;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.time{font-family:var(--f-data);font-weight:500;font-size:15px;font-variant-numeric:tabular-nums}
+.mtype{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700}
+.meal-head .tag{margin-left:auto}
+.items{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.items li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:baseline}
+.iname{min-width:0;overflow-wrap:anywhere}
+.qty{font-family:var(--f-data);font-size:13.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.note{margin:8px 0 0;font-style:italic;color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+
+.empty{text-align:center;padding:32px 12px 8px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:6px}
+.empty svg{width:64px;height:64px;color:var(--muted)}
+.empty b{display:block;color:var(--ink);font-family:var(--f-display);font-weight:400;font-size:21px;margin-top:6px}
+.empty p{margin:0;max-width:34ch}
+
+.fab{position:fixed;z-index:25;right:max(16px,calc((100vw - 600px) / 2 + 16px));bottom:calc(74px + env(safe-area-inset-bottom,0px));display:inline-flex;align-items:center;gap:8px;padding:14px 20px;border-radius:999px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:16px;box-shadow:0 8px 22px rgba(30,32,90,.28);cursor:pointer}
+.fab svg{width:18px;height:18px}
+
+/* Onglets */
+.tabs{position:fixed;z-index:30;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.tabs-in{max-width:600px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 10px;border:0;background:none;color:var(--muted);font-size:12px;cursor:pointer}
+.tab svg{width:22px;height:22px}
+.tab[aria-current="page"]{color:var(--accent);font-weight:700}
+
+/* Vues secondaires */
+.vhead{padding-block:22px 4px}
+.vhead h2{font-family:var(--f-display);font-weight:400;font-size:27px;line-height:1.15;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:6px 0 0;max-width:60ch;font-size:15px}
+.label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:22px 0 8px}
+
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-top:14px}
+.box h3{margin:0;font-size:17px;display:flex;align-items:center;gap:8px}
+.box h3::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.box[data-kind="prefer"] h3::before{background:var(--ok)}
+.box[data-kind="avoid"] h3::before{background:var(--bad)}
+.box[data-kind="timed"] h3::before{background:var(--warn);border-radius:2px;transform:rotate(45deg)}
+.box .sub{font-size:14px;color:var(--muted);margin:4px 0 12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 12px;border-radius:999px;font-size:14.5px;background:var(--bg);border:1px solid var(--line);max-width:100%}
+.chip span{overflow-wrap:anywhere}
+.chip button{border:0;background:none;width:28px;height:28px;border-radius:50%;cursor:pointer;color:var(--muted);font-size:17px;line-height:1;flex:none}
+.chip button:hover{background:var(--line)}
+.none{font-size:14px;color:var(--muted);font-style:italic;margin:0 0 12px}
+.addrow{display:flex;gap:8px;flex-wrap:wrap}
+.addrow .input{flex:1 1 160px}
+.addrow .input.t{flex:0 0 112px}
+.input{width:100%;min-width:0;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:16px}
+textarea.input{resize:vertical;min-height:84px}
+select.input{padding-right:6px}
+.btn{padding:11px 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:700;cursor:pointer;white-space:nowrap;font-size:15px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--bad)}
+.btn.danger-fill{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:default}
+.timed{list-style:none;margin:0 0 12px;padding:0}
+.timed:empty{display:none}
+.timed li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)}
+.timed li:first-child{border-top:1px solid var(--line)}
+.tpill{font-family:var(--f-data);font-weight:500;font-size:13px;color:var(--warn);background:var(--warn-soft);padding:3px 8px;border-radius:6px;font-variant-numeric:tabular-nums}
+.timed .tname{overflow-wrap:anywhere}
+.info{font-size:14px;color:var(--muted);margin:22px 2px 0;max-width:60ch}
+.ro-note{padding:12px 14px;border-radius:12px;background:var(--warn-soft);font-size:14.5px;margin-top:14px}
+
+/* Historique */
+.hist{list-style:none;margin:10px 0 0;padding:0}
+.hist-row{width:100%;text-align:left;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:13px 2px;border:0;border-bottom:1px solid var(--line);background:none;cursor:pointer;align-items:baseline}
+.hist-date{font-weight:700}
+.hist-meta{display:flex;gap:6px;align-items:baseline;color:var(--muted);font-size:14px;white-space:nowrap}
+.hist-foods{grid-column:1/-1;color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.notice{padding:14px;border-radius:12px;background:var(--accent-soft);font-size:14.5px;margin-top:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.notice p{margin:0}
+
+/* Récap */
+.seg{display:flex;flex-wrap:wrap;gap:6px;border:0;margin:0;padding:0;min-width:0}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.seg span{display:inline-block;padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:14.5px}
+.seg input:checked+span{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.range{color:var(--muted);font-size:14px;margin:10px 0 0}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi b{display:block;font-family:var(--f-display);font-weight:400;font-size:27px;line-height:1.1;font-variant-numeric:tabular-nums}
+.kpi span{font-size:13px;color:var(--muted)}
+.kpi.bad b{color:var(--bad)}
+.rows{list-style:none;margin:0;padding:0}
+.rows li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.rows .r-when{font-family:var(--f-data);font-size:13px;color:var(--muted);white-space:nowrap}
+.rows .r-main{min-width:0;overflow-wrap:anywhere}
+.rows .cnt{font-family:var(--f-data);font-size:13.5px;color:var(--muted)}
+.recap-text{white-space:pre-wrap;overflow-wrap:anywhere;font-family:var(--f-data);font-size:13px;line-height:1.6;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;max-height:380px;overflow-y:auto;margin:0}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* Fiche repas */
+.sheet{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet-backdrop{position:absolute;inset:0;background:var(--scrim)}
+.sheet-panel{position:relative;width:100%;max-width:600px;max-height:calc(100% - 20px - env(safe-area-inset-top,0px));overflow-y:auto;overscroll-behavior:contain;background:var(--surface);border-radius:20px 20px 0 0;padding:4px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px;animation:up .22s ease-out}
+.sheet-panel:focus{outline:none}
+@keyframes up{from{transform:translateY(28px);opacity:.5}to{transform:none;opacity:1}}
+.grabber{width:40px;height:4px;border-radius:2px;background:var(--line);margin:8px auto -6px;flex:none}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sheet-head h2{font-family:var(--f-display);font-weight:400;font-size:23px;margin:0}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>span,.flabel{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.items-edit{display:flex;flex-direction:column;gap:12px}
+.item-row{display:grid;grid-template-columns:76px minmax(0,1fr) 40px;grid-template-areas:"name name del" "qty unit unit" "flag flag flag";gap:6px 8px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+.item-row .i-name{grid-area:name}
+.item-row .i-qty{grid-area:qty;font-family:var(--f-data)}
+.item-row .i-unit{grid-area:unit}
+.item-row .i-del{grid-area:del;align-self:center}
+.item-row .i-flag{grid-area:flag;font-size:13.5px;color:var(--muted)}
+.item-row .i-flag:empty{display:none}
+@media (min-width:500px){
+  .item-row{grid-template-columns:minmax(0,1fr) 76px 128px 40px;grid-template-areas:"name qty unit del" "flag flag flag flag"}
+}
+.quick{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.quick:empty{display:none}
+.qchip{border:1px dashed var(--line);background:var(--bg);border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer}
+.qchip small{font-family:var(--f-data);color:var(--muted);font-size:12px}
+.form-error{color:var(--bad);font-weight:700;font-size:14px;margin:0}
+.sheet-actions{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.sheet-actions .btn.primary{flex:1 1 180px;padding-block:14px;font-size:16px}
+.confirm{display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:12px;background:var(--bad-soft)}
+.confirm p{margin:0;font-weight:700}
+.confirm div{display:flex;gap:8px;flex-wrap:wrap}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(138px + env(safe-area-inset-bottom,0px));z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;max-width:calc(100% - 32px);text-align:center}
+
+@media (prefers-reduced-motion:reduce){.sheet-panel{animation:none}}
+
+/* Version autonome */
+.update-note{display:flex;flex-direction:column;gap:10px;align-items:flex-start;padding:14px;border-radius:12px;background:var(--accent-soft);font-size:14.5px;margin-top:14px}
+.update-note p{margin:0}
+.update-note div{display:flex;gap:8px;flex-wrap:wrap}
+.backup-meta{font-size:14px;color:var(--muted);margin:0 0 12px}
+.backup-meta.late{color:var(--warn);font-weight:700}
+.file-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.confirm.neutral{background:var(--accent-soft)}
+label.btn{display:inline-block}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <span class="brand">Carnet alimentaire</span>
+    <span id="sync" class="sync" data-s="local">Sur ce téléphone</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- JOURNAL -->
+  <section id="view-journal" aria-labelledby="dayTitle">
+    <div class="welcome">
+      <p class="w-hello">Bienvenue <em>Melissa</em></p>
+      <p class="w-msg" id="welcomeMsg">Voici ton carnet alimentaire. Note tes repas au fil de la journée avec les quantités : il vérifie tout seul les consignes de ta nutritionniste et prépare le récap pour ton prochain rendez-vous.</p>
+      <details class="menu" id="menuBox" hidden>
+        <summary>Voir les consignes de la nutritionniste</summary>
+        <div class="menu-text" id="menuText"></div>
+      </details>
+    </div>
+    <div class="daynav">
+      <button type="button" class="iconbtn" id="prevDay" aria-label="Jour précédent"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div>
+        <h1 id="dayTitle">Aujourd'hui</h1>
+        <div class="daysub" id="daySub"></div>
+      </div>
+      <button type="button" class="iconbtn" id="nextDay" aria-label="Jour suivant"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    </div>
+    <div class="daystats" id="dayStats"></div>
+    <div class="weekstats" id="weekStats" hidden></div>
+    <div class="banner" id="cutoffBanner" hidden></div>
+    <ol class="timeline" id="timeline" hidden></ol>
+    <div class="empty" id="dayEmpty">
+      <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="32" cy="34" r="18"/><circle cx="32" cy="34" r="11" opacity=".55"/><path d="M8 14v12M5 14v7a3 3 0 0 0 6 0v-7M8 26v26"/><path d="M57 14c-3 2-4 7-4 12h4v26"/></svg>
+      <b id="emptyTitle">Ouverture du carnet…</b>
+      <p id="emptyText">Les repas notés apparaîtront ici, dans l'ordre de la journée.</p>
+      <button type="button" class="linkbtn" id="goRules" hidden>Saisir d'abord les règles de la nutritionniste</button>
+    </div>
+  </section>
+
+  <!-- HISTORIQUE -->
+  <section id="view-history" hidden aria-labelledby="histTitle">
+    <div class="vhead">
+      <h2 id="histTitle">Historique</h2>
+      <p class="lede">Chaque jour noté, avec le nombre de repas et d'écarts. Touche un jour pour le revoir.</p>
+    </div>
+    <ul class="hist" id="histList"></ul>
+    <div class="empty" id="histEmpty" hidden>
+      <b>Pas encore d'historique</b>
+      <p>Les jours apparaîtront ici dès le premier repas noté.</p>
+    </div>
+  </section>
+
+  <!-- RÉCAP -->
+  <section id="view-recap" hidden aria-labelledby="recapTitle">
+    <div class="vhead">
+      <h2 id="recapTitle">Récap pour la nutritionniste</h2>
+      <p class="lede">Un résumé de la période, à montrer au rendez-vous ou à lui envoyer.</p>
+    </div>
+    <fieldset class="seg" id="recapSeg" style="margin-top:14px">
+      <legend class="flabel" style="margin-bottom:8px;padding:0">Période</legend>
+      <label><input type="radio" name="recapDays" id="rd7" value="7" checked><span>7 jours</span></label>
+      <label><input type="radio" name="recapDays" id="rd14" value="14"><span>14 jours</span></label>
+      <label><input type="radio" name="recapDays" id="rd30" value="30"><span>30 jours</span></label>
+    </fieldset>
+    <p class="range" id="recapRange"></p>
+    <div class="kpis">
+      <div class="kpi"><b id="kDays">0</b><span id="kDaysL">jours notés</span></div>
+      <div class="kpi"><b id="kMeals">0</b><span>repas</span></div>
+      <div class="kpi" id="kEcartsBox"><b id="kEcarts">0</b><span>écarts</span></div>
+    </div>
+    <h3 class="label">Écarts</h3>
+    <ul class="rows" id="ecartList"></ul>
+    <p class="none" id="ecartNone">Aucun écart sur la période.</p>
+    <div id="weeklyRecapBox" hidden>
+      <h3 class="label">Limites par semaine</h3>
+      <ul class="rows" id="weeklyRecap"></ul>
+    </div>
+    <h3 class="label">Aliments les plus notés</h3>
+    <ul class="rows" id="topList"></ul>
+    <p class="none" id="topNone">Rien de noté sur la période.</p>
+    <h3 class="label">Texte du carnet</h3>
+    <pre class="recap-text" id="recapText"></pre>
+    <div class="actions">
+      <button type="button" class="btn primary" id="copyBtn">Copier le texte</button>
+      <button type="button" class="btn" id="dlBtn">Enregistrer en fichier (.txt)</button>
+    </div>
+  </section>
+
+  <!-- RÈGLES -->
+  <section id="view-rules" hidden aria-labelledby="rulesTitle">
+    <div class="vhead">
+      <h2 id="rulesTitle">Règles de la nutritionniste</h2>
+      <p class="lede">Chaque repas noté est comparé à ces listes. Note des aliments précis (« banane » plutôt que « fruits ») pour que la vérification les reconnaisse.</p>
+    </div>
+    <div class="ro-note" id="roNote" hidden>Ce carnet est en lecture seule.</div>
+    <div class="update-note" id="rulesUpdate" hidden>
+      <p><b>Nouvelles règles de la nutritionniste disponibles.</b> Tu avais modifié tes règles : veux-tu les remplacer par la nouvelle version ?</p>
+      <div><button type="button" class="btn primary" id="rulesUpdateYes">Utiliser les nouvelles règles</button><button type="button" class="btn" id="rulesUpdateNo">Garder les miennes</button></div>
+    </div>
+
+    <div class="box" data-kind="prefer">
+      <h3>À privilégier</h3>
+      <p class="sub">Les aliments conseillés, marqués en vert dans le journal.</p>
+      <div class="chips" id="preferChips"></div>
+      <p class="none" id="preferNone">Aucun aliment pour l'instant.</p>
+      <form class="addrow" id="preferForm" autocomplete="off">
+        <input class="input" id="preferInput" placeholder="ex. légumes verts, poisson" aria-label="Aliment à privilégier">
+        <button class="btn" type="submit">Ajouter</button>
+      </form>
+    </div>
+
+    <div class="box" data-kind="avoid">
+      <h3>À éviter</h3>
+      <p class="sub">Les aliments à ne pas manger, signalés en rouge comme écart.</p>
+      <div class="chips" id="avoidChips"></div>
+      <p class="none" id="avoidNone">Aucun aliment pour l'instant.</p>
+      <form class="addrow" id="avoidForm" autocomplete="off">
+        <input class="input" id="avoidInput" placeholder="ex. charcuterie, soda" aria-label="Aliment à éviter">
+        <button class="btn" type="submit">Ajouter</button>
+      </form>
+    </div>
+
+    <div class="box" data-kind="timed">
+      <h3>Pas après une certaine heure</h3>
+      <p class="sub">Un écart est signalé si l'aliment est noté à partir de cette heure.</p>
+      <div id="timedList"></div>
+      <p class="none" id="timedNone">Aucune limite d'heure pour l'instant.</p>
+      <form class="addrow" id="timedForm" autocomplete="off">
+        <input class="input" id="timedInput" placeholder="ex. fruits, chocolat" aria-label="Aliment concerné">
+        <input class="input t" type="time" id="timedTime" value="20:00" aria-label="À partir de">
+        <button class="btn" type="submit">Ajouter</button>
+      </form>
+    </div>
+
+    <div class="box" data-kind="meal">
+      <h3>Pas à certains repas</h3>
+      <p class="sub">Un écart est signalé si l'aliment est noté à ce repas.</p>
+      <div id="mealGroups"></div>
+      <p class="none" id="mealNone">Aucune restriction par repas pour l'instant.</p>
+      <form class="addrow" id="mealRuleForm" autocomplete="off">
+        <input class="input" id="mealRuleInput" placeholder="ex. yaourt, fromage" aria-label="Aliment concerné">
+        <select class="input t" id="mealRuleType" aria-label="Repas">
+          <option value="petit-dej">Petit-déjeuner</option>
+          <option value="dejeuner" selected>Déjeuner</option>
+          <option value="collation">Goûter</option>
+          <option value="diner">Souper</option>
+        </select>
+        <button class="btn" type="submit">Ajouter</button>
+      </form>
+    </div>
+
+    <div class="box" data-kind="weekly">
+      <h3>Limites par semaine</h3>
+      <p class="sub">Le journal compte combien de fois ces aliments sont notés, du lundi au dimanche.</p>
+      <ul class="rows" id="weeklyList"></ul>
+      <p class="none" id="weeklyNone">Aucune limite pour l'instant.</p>
+      <form class="addrow" id="weeklyForm" autocomplete="off">
+        <input class="input" id="weeklyInput" placeholder="ex. œuf, omelette" aria-label="Aliments comptés">
+        <input class="input n" id="weeklyMax" type="number" min="1" max="99" value="5" inputmode="numeric" aria-label="Nombre maximum par semaine">
+        <select class="input t" id="weeklyType" aria-label="Repas concerné">
+          <option value="">Tous les repas</option>
+          <option value="petit-dej">Petit-déjeuner</option>
+          <option value="dejeuner">Déjeuner</option>
+          <option value="collation">Goûter</option>
+          <option value="diner">Souper</option>
+        </select>
+        <button class="btn" type="submit">Ajouter</button>
+      </form>
+    </div>
+
+    <div class="box">
+      <h3>Autres consignes et menu type</h3>
+      <p class="sub">Le menu de la nutritionniste, consultable depuis l'accueil.</p>
+      <textarea class="input" id="notesInput" rows="10" placeholder="ex. 1,5 L d'eau par jour, pas de grignotage entre les repas" aria-label="Autres consignes et menu type"></textarea>
+    </div>
+
+    <div class="box" data-kind="backup">
+      <h3>Sauvegarde</h3>
+      <p class="sub">Les repas sont gardés sur ce téléphone. Fais une copie de temps en temps (dans Fichiers, par mail…) pour pouvoir tout récupérer si tu changes de téléphone.</p>
+      <p class="backup-meta" id="backupMeta"></p>
+      <div class="actions">
+        <button type="button" class="btn primary" id="backupBtn">Sauvegarder une copie</button>
+        <label class="btn" for="restoreInput" id="restoreLabel">Restaurer une copie</label>
+        <input type="file" id="restoreInput" class="file-input" accept=".json,application/json">
+      </div>
+      <div class="confirm neutral" id="restoreConfirm" hidden style="margin-top:12px">
+        <p id="restoreText"></p>
+        <div><button type="button" class="btn primary" id="restoreYes">Restaurer</button><button type="button" class="btn" id="restoreNo">Annuler</button></div>
+      </div>
+    </div>
+
+    <p class="info" id="storageInfo"></p>
+  </section>
+</main>
+
+<button type="button" class="fab" id="addBtn" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Noter un repas</button>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="tabs-in">
+    <button type="button" class="tab" data-tab="journal" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18M12 8h4M12 12h4"/></svg>Journal</button>
+    <button type="button" class="tab" data-tab="history">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Historique</button>
+    <button type="button" class="tab" data-tab="recap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM9 11h6M9 15h4"/></svg>Récap</button>
+    <button type="button" class="tab" data-tab="rules">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l2 2 3-3M4 13l2 2 3-3M12 7h8M12 14h8M4 19h16"/></svg>Règles</button>
+  </div>
+</nav>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <form class="sheet-panel" id="mealForm" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1" autocomplete="off" novalidate>
+    <div class="grabber" aria-hidden="true"></div>
+    <div class="sheet-head">
+      <h2 id="sheetTitle">Noter un repas</h2>
+      <button type="button" class="iconbtn sm" data-close aria-label="Fermer">×</button>
+    </div>
+    <div class="grid2">
+      <label class="field"><span>Date</span><input class="input" type="date" id="fDate"></label>
+      <label class="field"><span>Heure</span><input class="input" type="time" id="fTime"></label>
+    </div>
+    <fieldset class="seg" id="fTypes">
+      <legend class="flabel" style="margin-bottom:8px;padding:0">Repas</legend>
+    </fieldset>
+    <div class="field">
+      <span class="flabel">Aliments et quantités</span>
+      <div class="items-edit" id="fItems"></div>
+      <div><button type="button" class="btn" id="addItemBtn">+ Ajouter un aliment</button></div>
+    </div>
+    <div class="quick" id="quickFoods"></div>
+    <label class="field"><span>Remarque</span><textarea class="input" id="fNote" rows="2" placeholder="Faim, ressenti, contexte… (facultatif)"></textarea></label>
+    <p class="form-error" id="formError" hidden></p>
+    <div class="confirm" id="deleteConfirm" hidden>
+      <p>Supprimer ce repas du carnet ?</p>
+      <div><button type="button" class="btn danger-fill" id="deleteYes">Supprimer</button><button type="button" class="btn" id="deleteNo">Annuler</button></div>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn danger" id="deleteBtn" hidden>Supprimer</button>
+      <button type="submit" class="btn primary" id="saveBtn">Enregistrer</button>
+    </div>
+  </form>
+</div>
+
+<datalist id="foodList"></datalist>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+'use strict';
+var $ = function(s){ return document.querySelector(s); };
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function ymd(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function parseYmd(s){ var p=s.split('-').map(Number); return new Date(p[0],p[1]-1,p[2]); }
+function addDays(s,n){ var d=parseYmd(s); d.setDate(d.getDate()+n); return ymd(d); }
+function today(){ return ymd(new Date()); }
+function nowHM(){ var d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function fmtDay(s){ return cap(parseYmd(s).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})); }
+function fmtShort(s){ return cap(parseYmd(s).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})); }
+function fmtLong(s,year){ var o={day:'numeric',month:'long'}; if(year) o.year='numeric'; return parseYmd(s).toLocaleDateString('fr-FR',o); }
+function fmtTime(t){ if(!t) return ''; var p=t.split(':'); return p[1]==='00' ? (+p[0])+'h' : (+p[0])+'h'+p[1]; }
+function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+function newId(){ return 'm'+Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function plural(n,one,many){ return n+' '+(n>1?many:one); }
+
+var TYPES=[['petit-dej','Petit-déjeuner'],['dejeuner','Déjeuner'],['collation','Goûter'],['diner','Souper'],['autre','Autre']];
+var TYPE_LABEL={}; TYPES.forEach(function(t){ TYPE_LABEL[t[0]]=t[1]; });
+var MEAL_AT={'petit-dej':'au petit-déjeuner','dejeuner':'au déjeuner','collation':'au goûter','diner':'au souper','autre':'à ce repas'};
+function shortList(names,n){ n=n||5; return names.length>n ? names.slice(0,n).join(', ')+' (+'+(names.length-n)+')' : names.join(', '); }
+var UNITS=['g','ml','cl','pièce','tranche','portion','c. à soupe','c. à café','bol','verre','poignée',''];
+var PLURAL={'pièce':'pièces','tranche':'tranches','portion':'portions','bol':'bols','verre':'verres','poignée':'poignées'};
+function fmtQty(q,u){
+  q=String(q||'').trim(); if(!q) return '';
+  var n=parseFloat(q.replace(',','.'));
+  var unit = u ? ((!isNaN(n) && n>1 && PLURAL[u]) ? PLURAL[u] : u) : '';
+  return q+(unit?' '+unit:'');
+}
+function guessType(t){
+  if(t<'05:00') return 'collation';
+  if(t<'10:30') return 'petit-dej';
+  if(t<'14:30') return 'dejeuner';
+  if(t<'18:30') return 'collation';
+  return 'diner';
+}
+
+/* ---------- Comparaison aux règles ---------- */
+function norm(s){ return String(s||'').toLowerCase().replace(/œ/g,'oe').replace(/æ/g,'ae').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+var wordCache=new Map();
+function words(s){
+  var k=String(s||''); var c=wordCache.get(k); if(c) return c;
+  var w=k.normalize('NFC').toLowerCase().replace(/œ/g,'oe').replace(/æ/g,'ae').split(/[^a-z0-9àâäáãåéèêëíìîïóòôöõúùûüýÿçñ]+/).filter(Boolean).map(function(x){
+    if(x.length>3 && /[sx]$/.test(x)) x=x.slice(0,-1);
+    if(/é$/.test(x)) x=x.slice(0,-1)+'e2';
+    return x.normalize('NFD').replace(/[̀-ͯ]/g,'');
+  });
+  if(wordCache.size>2000) wordCache.clear();
+  wordCache.set(k,w); return w;
+}
+function contains(iw,rw){
+  if(!rw.length || rw.length>iw.length) return false;
+  for(var i=0;i<=iw.length-rw.length;i++){
+    var ok=true;
+    for(var j=0;j<rw.length;j++){ if(iw[i+j]!==rw[j]){ ok=false; break; } }
+    if(ok) return true;
+  }
+  return false;
+}
+function isLate(time,after){ return after>='12:00' ? (time>=after || time<'05:00') : time>=after; }
+function bestMatch(w,names){
+  var best=null, len=0;
+  for(var i=0;i<names.length;i++){ var rw=words(names[i]); if(rw.length>len && contains(w,rw)){ best=names[i]; len=rw.length; } }
+  return best ? {rule:best,len:len} : null;
+}
+function otherNames(R){
+  var o=[]; R.byMeal.forEach(function(b){ o.push(b.name); }); R.timed.forEach(function(t){ o.push(t.name); }); R.weekly.forEach(function(x){ o=o.concat(x.names); });
+  return o;
+}
+function checkItem(name,time,R,type){
+  var w=words(name); if(!w.length) return null;
+  var i, av=bestMatch(w,R.avoid), pr=bestMatch(w,R.prefer);
+  // Une règle « conseillé » plus précise l'emporte sur « à éviter » (ex. « blanc de dinde » face à « dinde »).
+  if(av && !(pr && pr.len>av.len)) return {kind:'bad',label:'à éviter',rule:av.rule};
+  if(type) for(i=0;i<R.byMeal.length;i++){ var b=R.byMeal[i]; if(b.type===type && contains(w,words(b.name))) return {kind:'warn',label:'pas '+MEAL_AT[type],rule:b.name,meal:type}; }
+  if(time) for(i=0;i<R.timed.length;i++){ var t=R.timed[i]; if(isLate(time,t.after) && contains(w,words(t.name))) return {kind:'warn',label:'après '+fmtTime(t.after),rule:t.name,after:t.after}; }
+  if(pr){ var ot=bestMatch(w,otherNames(R)); if(!(ot && ot.len>pr.len)) return {kind:'ok',label:'conseillé',rule:pr.rule}; }
+  return null;
+}
+function whyText(f){
+  if(!f) return '';
+  if(f.kind==='ok') return 'dans la liste à privilégier';
+  if(f.kind==='bad') return '« '+f.rule+' » est à éviter';
+  if(f.meal) return '« '+f.rule+' » pas '+MEAL_AT[f.meal];
+  return '« '+f.rule+' » pas après '+fmtTime(f.after);
+}
+function reasonText(f){ return f.kind==='bad' ? 'aliment à éviter' : f.meal ? 'pas '+MEAL_AT[f.meal] : 'après '+fmtTime(f.after); }
+function groupByMeal(list){
+  var m={}; list.forEach(function(b,i){ (m[b.type]=m[b.type]||[]).push({name:b.name,idx:i}); });
+  return TYPES.filter(function(t){ return m[t[0]]; }).map(function(t){ return {type:t[0],items:m[t[0]]}; });
+}
+function weekStartOf(s){ var d=parseYmd(s); d.setDate(d.getDate()-((d.getDay()+6)%7)); return ymd(d); }
+function weeklyCount(rule,ws){
+  var we=addDays(ws,6), n=0;
+  S.meals.forEach(function(m){
+    if(m.date<ws || m.date>we) return;
+    if(rule.type && m.type!==rule.type) return;
+    var hit=0;
+    m.items.forEach(function(it){
+      var w=words(it.name);
+      if(rule.names.some(function(r){ return contains(w,words(r)); })){
+        var q=parseFloat(String(it.qty||'').replace(',','.'));
+        hit += (!rule.type && (it.unit==='pièce' || it.unit==='') && q>0 && q<20) ? q : 1;
+      }
+    });
+    if(hit) n += rule.type ? 1 : hit;
+  });
+  return Math.round(n*10)/10;
+}
+function rulesIsEmpty(R){ return !R.prefer.length && !R.avoid.length && !R.timed.length && !R.byMeal.length && !R.weekly.length && !R.notes; }
+function groupTimed(timed){
+  var m={}; timed.forEach(function(t){ (m[t.after]=m[t.after]||[]).push(t.name); });
+  return Object.keys(m).sort().map(function(a){ return {after:a,names:m[a]}; });
+}
+
+/* ---------- État ---------- */
+function emptyRules(){ return {prefer:[],avoid:[],timed:[],byMeal:[],weekly:[],notes:''}; }
+function mealType(t){ return (TYPE_LABEL[t] && t!=='autre') ? t : ''; }
+function strList(a){ return Array.isArray(a) ? a.filter(function(x){ return typeof x==='string' && x.trim(); }).map(function(x){ return x.slice(0,80); }) : []; }
+function normalizeRules(d){
+  d=d||{};
+  return {
+    prefer:strList(d.prefer), avoid:strList(d.avoid),
+    timed:Array.isArray(d.timed) ? d.timed.filter(function(t){ return t && typeof t.name==='string' && t.name.trim() && /^\d\d:\d\d$/.test(t.after); }).map(function(t){ return {name:t.name.slice(0,80),after:t.after}; }) : [],
+    byMeal:Array.isArray(d.byMeal) ? d.byMeal.filter(function(b){ return b && typeof b.name==='string' && b.name.trim() && mealType(b.type); }).map(function(b){ return {name:b.name.slice(0,80),type:b.type}; }) : [],
+    weekly:Array.isArray(d.weekly) ? d.weekly.filter(function(x){ return x && strList(x.names).length && Number(x.max)>0; }).slice(0,20).map(function(x){
+      var names=strList(x.names).slice(0,40);
+      return {label:(typeof x.label==='string' && x.label.trim()) ? x.label.slice(0,60) : cap(names[0]), names:names, max:Math.min(99,Math.round(Number(x.max))), type:mealType(x.type)};
+    }) : [],
+    notes:typeof d.notes==='string' ? d.notes.slice(0,12000) : ''
+  };
+}
+function normalizeMeal(id,d){
+  d=d||{};
+  if(typeof id!=='string' || !/^\d{4}-\d\d-\d\d$/.test(d.date)) return null;
+  var time=/^\d\d:\d\d$/.test(d.time) ? d.time : '12:00';
+  var items=Array.isArray(d.items) ? d.items.filter(function(i){ return i && typeof i.name==='string' && i.name.trim(); }).map(function(i){
+    return {name:i.name.slice(0,120), qty:(typeof i.qty==='string'||typeof i.qty==='number') ? String(i.qty).slice(0,20) : '', unit:UNITS.indexOf(i.unit)>=0 ? i.unit : ''};
+  }) : [];
+  return {id:id,date:d.date,time:time,at:d.date+'T'+time,type:TYPE_LABEL[d.type] ? d.type : 'autre',items:items,note:typeof d.note==='string' ? d.note.slice(0,1000) : '',updatedAt:typeof d.updatedAt==='string' ? d.updatedAt : ''};
+}
+function mealBody(m){ return {date:m.date,time:m.time,at:m.at,type:m.type,items:m.items,note:m.note,updatedAt:m.updatedAt}; }
+function byAt(a,b){ return a.at<b.at ? -1 : a.at>b.at ? 1 : 0; }
+
+var RULES_VERSION=2;
+var DEFAULT_RULES={"prefer": ["fruit", "compote", "pain nordique", "flocons d'avoine", "fromage", "yaourt", "skyr", "lait", "jambon", "jambon de porc", "poulet", "bacon", "viande des grisons", "œuf", "café", "crudités", "légumes", "viande", "poisson", "poisson blanc", "crustacés", "féculents", "céréales", "produit laitier", "eau", "thé", "tisane", "café sans sucre", "sans sucre", "non sucré", "non sucrée", "huile de colza", "huile de noix", "huile de cameline", "huile de chanvre", "huile de soja", "huile de germe de blé", "vinaigre de cidre", "herbes", "échalote", "ail", "sel de Guérande", "Herbamare", "tamarin", "jambon découenné", "jambon de dinde", "jambon de poulet", "blanc de poulet", "blanc de dinde", "escalope de dinde", "escalope de veau", "ris de veau", "rumsteck", "filet de bœuf", "steak haché", "cheval", "gibier", "chevreuil", "sanglier", "pigeon", "pintade", "foie", "cœur", "rognons", "cabillaud", "colin", "merlu", "lieu", "sole", "merlan", "églefin", "limande", "bar", "dorade", "daurade", "lotte", "raie", "coquillages", "crevette", "gambas", "moule", "huître", "saint-jacques", "noix de saint-jacques", "crabe", "homard", "langoustine", "fromage blanc", "yaourt nature", "skyr nature", "lait écrémé", "lait demi-écrémé", "lait de soja", "yaourt soja", "yaourt au soja", "citron", "orange", "pamplemousse", "clémentine", "mandarine", "kiwi", "fraise", "groseille", "cassis", "mûre", "framboise", "pomme", "rhubarbe", "pastèque", "myrtille", "abricot", "aubergine", "artichaut", "asperge", "betterave crue", "brocoli", "carotte crue", "céleri", "champignon", "chicorée", "chou", "chou-fleur", "cornichon", "concombre", "courgette", "courge", "endive", "épinard", "fenouil", "haricot vert", "haricot beurre", "melon", "navet", "poivron", "poireau", "pousse de soja", "radis", "tomate", "salade"], "avoid": ["agneau", "mouton", "poule", "coq", "oie", "canard", "dinde", "porc", "bœuf", "entrecôte", "bavette", "faux-filet", "côte de bœuf", "foie gras", "charcuterie", "saucisson", "saucisse", "pâté", "rillettes", "chorizo", "salami", "lardons", "boudin", "andouille", "terrine", "mortadelle", "merguez", "jambon cru", "saumon", "sardine", "truite saumonée", "maquereau", "surimi", "fumé", "fumée", "séché", "séchée", "lait entier", "crème", "beurre", "graines", "noix", "noisette", "pistache", "amande", "noix de cajou", "noix du Brésil", "pignon", "cacahuète", "beurre de cacahuète", "chocolat", "cacao", "sésame", "graines de tournesol", "avocat", "olive", "fruits secs", "raisins secs", "datte", "pruneau", "figue", "noix de coco", "coco", "jus de fruit", "jus d'orange", "jus de pomme", "compote du commerce", "fruits au sirop", "fruits en conserve", "sucre", "sucré", "sucrée", "bonbon", "confiture", "miel", "soda", "coca", "sirop", "pâtisserie", "gâteau", "tarte", "viennoiserie", "croissant", "brioche", "pain au chocolat", "biscuit", "cookie", "chips", "pain de mie", "alcool", "apéritif", "vin", "bière", "champagne", "cidre", "pastis", "whisky", "rhum", "vodka", "cocktail", "margarine", "saindoux", "huile raffinée", "huile de tournesol", "huile d'arachide", "huile d'olive", "huile d'argan", "friture", "frit", "frite", "pané", "panée", "panure", "poêlé", "poêlée", "sauté", "sautée", "mayonnaise", "ketchup", "sauce toute prête", "bouillon cube", "knorr", "vinaigre de vin", "vinaigre balsamique", "balsamique"], "timed": [{"name": "fruit", "after": "18:00"}, {"name": "compote", "after": "18:00"}, {"name": "pomme", "after": "18:00"}, {"name": "poire", "after": "18:00"}, {"name": "banane", "after": "18:00"}, {"name": "orange", "after": "18:00"}, {"name": "clémentine", "after": "18:00"}, {"name": "mandarine", "after": "18:00"}, {"name": "kiwi", "after": "18:00"}, {"name": "raisin", "after": "18:00"}, {"name": "fraise", "after": "18:00"}, {"name": "framboise", "after": "18:00"}, {"name": "mûre", "after": "18:00"}, {"name": "myrtille", "after": "18:00"}, {"name": "groseille", "after": "18:00"}, {"name": "cassis", "after": "18:00"}, {"name": "pêche", "after": "18:00"}, {"name": "abricot", "after": "18:00"}, {"name": "ananas", "after": "18:00"}, {"name": "pamplemousse", "after": "18:00"}, {"name": "pastèque", "after": "18:00"}, {"name": "rhubarbe", "after": "18:00"}], "byMeal": [{"name": "laitage", "type": "dejeuner"}, {"name": "produit laitier", "type": "dejeuner"}, {"name": "lait", "type": "dejeuner"}, {"name": "yaourt", "type": "dejeuner"}, {"name": "fromage", "type": "dejeuner"}, {"name": "skyr", "type": "dejeuner"}, {"name": "viande", "type": "diner"}, {"name": "jambon", "type": "diner"}, {"name": "dinde", "type": "diner"}, {"name": "poulet", "type": "diner"}, {"name": "porc", "type": "diner"}, {"name": "bœuf", "type": "diner"}, {"name": "veau", "type": "diner"}, {"name": "agneau", "type": "diner"}, {"name": "canard", "type": "diner"}, {"name": "steak", "type": "diner"}, {"name": "bacon", "type": "diner"}, {"name": "lardons", "type": "diner"}, {"name": "saucisse", "type": "diner"}, {"name": "viande des grisons", "type": "diner"}, {"name": "cheval", "type": "diner"}, {"name": "gibier", "type": "diner"}, {"name": "pintade", "type": "diner"}, {"name": "pigeon", "type": "diner"}, {"name": "foie", "type": "diner"}, {"name": "rognons", "type": "diner"}, {"name": "féculents", "type": "diner"}, {"name": "pain", "type": "diner"}, {"name": "pâtes", "type": "diner"}, {"name": "riz", "type": "diner"}, {"name": "pomme de terre", "type": "diner"}, {"name": "semoule", "type": "diner"}, {"name": "quinoa", "type": "diner"}, {"name": "boulgour", "type": "diner"}, {"name": "flocons d'avoine", "type": "diner"}, {"name": "céréales", "type": "diner"}, {"name": "maïs", "type": "diner"}, {"name": "lentilles", "type": "diner"}, {"name": "pois chiches", "type": "diner"}, {"name": "fruit", "type": "diner"}, {"name": "compote", "type": "diner"}, {"name": "carotte", "type": "diner"}, {"name": "betterave", "type": "diner"}], "weekly": [{"label": "Œufs", "names": ["œuf", "omelette"], "max": 5, "type": ""}, {"label": "Féculents au déjeuner", "names": ["féculents", "pâtes", "riz", "pomme de terre", "semoule", "quinoa", "boulgour", "céréales", "maïs", "lentilles", "pois chiches", "haricots rouges", "haricots blancs", "flageolets", "polenta"], "max": 2, "type": "dejeuner"}], "notes": "1,5 L d'eau par jour, de préférence entre les repas (boire en mangeant vide l'estomac avant la fin de la digestion).\nPetit-déjeuner, déjeuner et goûter : obligatoires. Souper : facultatif.\n\nPETIT-DÉJEUNER (pas plus de 5 œufs par semaine)\n• 1 fruit ou 1 compote maison (glucides)\n• 60 g de pain nordique (pas de pain de mie), ou 30 g de flocons d'avoine (féculents)\n• 30 g de fromage (9 %), ou 1 yaourt nature, ou 120 g de fromage blanc nature, ou 120 g de skyr, ou 25 cl de lait (lipides)\n• 60 g de jambon (porc, dinde, poulet, bacon, viande des Grisons) ou 1 œuf (protéines)\n• 1 café sans sucre\n\nDÉJEUNER (pas de laitage)\n• Crudités à volonté (+ vinaigrette) et/ou légumes cuits à volonté\n• 120 g de viande, de poisson ou de crustacés\n• 120 g de féculents ou céréales cuits (2 fois par semaine), toujours accompagnés de légumes\n• 1 fruit\n\nGOÛTER (pas de fruits après 18h)\n• Idem petit-déjeuner\n\nSOUPER (pas de viande le soir, ni fruit, ni féculent ; pas de carottes ni de betteraves le soir)\n• Crudités à volonté (+ vinaigrette) et/ou légumes cuits à volonté\n• Poisson blanc, crustacés ou 1 œuf\n• 1 produit laitier nature et non sucré\n\nBOISSONS\n• Eau plate de source ou minérale pauvre en sodium\n• Thé, tisane sans sucre (si possible sans édulcorant)\n• 3 cafés par jour maximum, sans sucre (si possible sans édulcorant)\n\nMATIÈRES GRASSES ET ASSAISONNEMENTS\n• Seule matière grasse : de l'huile biologique pour assaisonner les salades (le nombre de cuillères à soupe par jour est laissé en blanc sur la feuille)\n• Huiles de 1re pression à froid, bio : de préférence cameline, chanvre, noix ou colza ; sinon soja ou germe de blé. Olive, tournesol, arachide et argan déconseillées pendant la perte de poids.\n• Vinaigre de cidre de préférence ; éviter le vinaigre de vin et le balsamique.\n• Éviter les sauces toutes prêtes, même « allégées ».\n• Toutes les herbes ; ail et échalote sans excès.\n• Peu de sel (sel de Guérande ou Herbamare, tamarin) ; pas d'aromates au glutamate (Knorr) ; moutarde avec parcimonie.\n• Cuisiner sans ajouter de matières grasses. Interdits : friture, panure, sauté à la poêle.\n\nÀ ÉVITER DANS UN PREMIER TEMPS (certains seront réintégrés plus tard)\n• Viandes : agneau, mouton, poule, coq, oie, canard, dinde (sauf escalope et blanc), porc (sauf jambon découenné), bœuf (sauf rumsteck, filet et steak haché 5 % MG)\n• Poissons fumés ou séchés ; toutes les charcuteries\n• Pommes de terre, légumes secs, céréales (riz, pâtes, maïs…)\n• Fromages non allégés, lait entier, crème, beurre\n• Oléagineux : toutes les graines, noix, noisettes, amandes, pistaches, pignons, cacahuètes, chocolat, cacao, sésame, avocat, olives\n• Fruits séchés, dattes, pruneaux, figues, noix de coco, jus de fruits et compotes du commerce (même sans sucres ajoutés), fruits en conserve\n• Sucre (bonbons, confiture, miel, sodas…), pâtisseries, gâteaux sucrés et salés\n• Alcool : apéritifs, vin, bière…\n• Graisses : beurre, margarine, saindoux, huiles raffinées\n\nPHASE DE DÉSINTOXICATION : À VOLONTÉ (tout noter dans le carnet)\n• Viandes : jambon découenné -25 % de sel, tous les gibiers, bœuf (filet, rumsteck, steak haché 5 % MG), volaille (pigeon, blanc de poulet ou de dinde, jambon de dinde ou de poulet, pintade), cheval, veau (escalope, ris de veau), abats (foie, cœur, rognons)\n• Œufs : 7 par semaine sur cette feuille (5 sur le menu du petit-déjeuner)\n• Poissons maigres (blancs), tous les coquillages et crustacés. Pas de saumon, sardine, truite saumonée, maquereau, surimi.\n• Laitages : fromages à 9 % de MG maximum, lait écrémé ou demi-écrémé, lait et yaourt de soja nature, yaourt nature, fromage blanc nature, skyr nature\n• Fruits (pas de jus ni de compote du commerce) : citron, orange, pamplemousse, clémentine, mandarine, kiwi, fraise, groseille, cassis, mûre, framboise, pomme, rhubarbe, pastèque, myrtille, abricot\n• Légumes : aubergine, artichaut, asperges, betterave crue, brocoli, carotte crue, céleri branche et rave, champignon, chicorée, choux (rouge, vert, blanc, chou-fleur), cornichon, concombre, courgette, courge, endive, épinard, fenouil, haricots verts et beurre, melon, navet, poivron, poireau, pousses de soja, radis, tomate, toutes les salades et herbes"};
+var S={mode:'local',readOnly:false,storageOk:true,meals:[],rules:emptyRules(),mealsLoaded:false,rulesVersion:0,rulesEdited:false,lastBackup:'',pendingRulesUpdate:false};
+var UI={tab:'journal',day:today(),recapDays:7,recapStart:'',recapEnd:'',editing:null,typeTouched:false,rowSeq:0,lastFocus:null,pendingRestore:null,reloadOnClose:false};
+
+/* ---------- Stockage sur le téléphone ---------- */
+var LS_KEY='carnet-alimentaire-v1';
+function lsRead(){ try{ var r=localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; }catch(e){ return null; } }
+function lsWrite(o){ try{ localStorage.setItem(LS_KEY,JSON.stringify(o)); return true; }catch(e){ return false; } }
+function snapshot(){
+  return {app:'carnet-alimentaire',format:1,meals:S.meals.map(function(m){ var b=mealBody(m); b.id=m.id; return b; }),rules:S.rules,rulesVersion:S.rulesVersion,rulesEdited:S.rulesEdited,lastBackup:S.lastBackup};
+}
+function persistLocal(){
+  var ok=lsWrite(snapshot());
+  if(ok!==S.storageOk){ S.storageOk=ok; renderStatus(); }
+}
+function useDefaultRules(){ S.rules=normalizeRules(DEFAULT_RULES); S.rulesVersion=RULES_VERSION; S.rulesEdited=false; }
+function loadState(){
+  try{ localStorage.setItem('__carnet_test','1'); localStorage.removeItem('__carnet_test'); }catch(e){ S.storageOk=false; }
+  var loc=lsRead();
+  if(loc){
+    S.meals=(Array.isArray(loc.meals)?loc.meals:[]).map(function(m){ return normalizeMeal(m&&m.id,m); }).filter(Boolean);
+    S.rules=normalizeRules(loc.rules);
+    S.rulesVersion=+loc.rulesVersion||0;
+    S.rulesEdited=!!loc.rulesEdited;
+    S.lastBackup=typeof loc.lastBackup==='string' ? loc.lastBackup : '';
+    if(S.rulesVersion<RULES_VERSION){
+      if(!S.rulesEdited || rulesIsEmpty(S.rules)){
+        var had=!rulesIsEmpty(S.rules);
+        useDefaultRules(); persistLocal();
+        if(had) setTimeout(function(){ toast('Règles de la nutritionniste mises à jour'); },700);
+      } else S.pendingRulesUpdate=true;
+    }
+  } else {
+    useDefaultRules(); persistLocal();
+  }
+  S.mealsLoaded=true;
+}
+async function saveMeal(id,meal){
+  meal.id=id;
+  var i=S.meals.findIndex(function(m){ return m.id===id; });
+  if(i>=0) S.meals[i]=meal; else S.meals.push(meal);
+  persistLocal(); renderAll();
+  if(!S.storageOk){ toast("Le téléphone bloque l'enregistrement : ouvre le carnet depuis son icône."); return false; }
+  return true;
+}
+async function deleteMeal(id){
+  S.meals=S.meals.filter(function(m){ return m.id!==id; });
+  persistLocal(); renderAll(); return true;
+}
+function setRules(R){
+  S.rules=normalizeRules(R);
+  S.rulesEdited=true;
+  persistLocal(); renderAll();
+}
+function cloneRules(){ return JSON.parse(JSON.stringify(S.rules)); }
+function answerRulesUpdate(useNew){
+  if(useNew) useDefaultRules(); else S.rulesVersion=RULES_VERSION;
+  S.pendingRulesUpdate=false;
+  persistLocal(); renderAll();
+  toast(useNew ? 'Nouvelles règles appliquées' : 'Tes règles sont gardées');
+}
+
+/* ---------- Fichiers (copie, récap) ---------- */
+function saveFile(name,text,mime){
+  var blob=new Blob([text],{type:mime});
+  function fallbackDownload(){
+    try{
+      var url=URL.createObjectURL(blob), a=document.createElement('a');
+      a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); },5000);
+      return 'downloaded';
+    }catch(e){ return 'failed'; }
+  }
+  try{
+    var file=new File([blob],name,{type:mime});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      return navigator.share({files:[file],title:name}).then(function(){ return 'shared'; },function(e){ return (e && e.name==='AbortError') ? 'cancel' : fallbackDownload(); });
+    }
+  }catch(e){}
+  return Promise.resolve(fallbackDownload());
+}
+
+/* ---------- Mises à jour automatiques ---------- */
+function registerSW(){
+  if(!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) return;
+  var hadController=!!navigator.serviceWorker.controller, reloading=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(!hadController){ hadController=true; return; }
+    if(reloading) return;
+    if(!$('#sheet').hidden){ UI.reloadOnClose=true; return; }
+    reloading=true; location.reload();
+  });
+  navigator.serviceWorker.register('sw.js').then(function(reg){
+    document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible') reg.update().catch(function(){}); });
+  }).catch(function(){});
+}
+
+function init(){
+  bindEvents();
+  var h=(location.hash||'').replace('#','');
+  var map={journal:'journal',historique:'history',recap:'recap',regles:'rules'};
+  if(map[h]) UI.tab=map[h];
+  loadState();
+  switchTab(UI.tab,true);
+  if(S.pendingRulesUpdate && UI.tab!=='rules') setTimeout(function(){ toast("Nouvelles règles disponibles : voir l'onglet Règles"); },900);
+  registerSW();
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function(){}); }catch(e){}
+}
+
+/* ---------- Rendu ---------- */
+function renderAll(){
+  renderStatus(); renderDatalist();
+  renderJournal(); renderHistory(); renderRecap(); renderRules();
+}
+function renderStatus(){
+  var st=$('#sync');
+  if(S.storageOk){ st.dataset.s='local'; st.textContent='Sur ce téléphone'; }
+  else { st.dataset.s='err'; st.textContent='Non sauvegardé'; }
+  $('#addBtn').hidden = UI.tab!=='journal';
+  $('#storageInfo').textContent = S.storageOk
+    ? "Tes repas restent sur ce téléphone et ne sont envoyés nulle part. Le carnet fonctionne aussi sans connexion."
+    : "Le téléphone bloque l'enregistrement : ce qui est noté sera perdu en fermant la page. Ouvre le carnet depuis son icône sur l'écran d'accueil.";
+  $('#rulesUpdate').hidden=!S.pendingRulesUpdate;
+  var bm=$('#backupMeta');
+  if(!S.lastBackup){
+    bm.textContent='Aucune copie sauvegardée pour l\'instant.';
+    bm.className='backup-meta'+(S.meals.length>=20?' late':'');
+  } else {
+    var days=Math.floor((Date.now()-new Date(S.lastBackup).getTime())/86400000);
+    bm.textContent='Dernière copie : '+(days<1?"aujourd'hui":days===1?'hier':'il y a '+days+' jours')+'.';
+    bm.className='backup-meta'+(days>30?' late':'');
+  }
+}
+function renderDatalist(){
+  var seen={}, out=[];
+  function add(n){ var k=norm(n).trim(); if(k && !seen[k]){ seen[k]=1; out.push(n); } }
+  S.meals.slice().sort(byAt).reverse().forEach(function(m){ m.items.forEach(function(i){ add(i.name); }); });
+  S.rules.prefer.forEach(add); S.rules.avoid.forEach(add); S.rules.timed.forEach(function(t){ add(t.name); });
+  S.rules.byMeal.forEach(function(b){ add(b.name); }); S.rules.weekly.forEach(function(x){ x.names.forEach(add); });
+  $('#foodList').innerHTML=out.slice(0,300).map(function(n){ return '<option value="'+esc(n)+'"></option>'; }).join('');
+}
+function mealFlags(m){
+  return m.items.map(function(i){ return checkItem(i.name,m.time,S.rules,m.type); });
+}
+function renderJournal(){
+  var day=UI.day, t=today();
+  $('#welcomeMsg').textContent = (S.mealsLoaded && S.meals.length)
+    ? "Te revoilà ! Note tes repas au fil de la journée, ton récap pour la nutritionniste se prépare tout seul."
+    : "Voici ton carnet alimentaire. Note tes repas au fil de la journée avec les quantités : il vérifie tout seul les consignes de ta nutritionniste et prépare le récap pour ton prochain rendez-vous.";
+  $('#dayTitle').textContent = day===t ? "Aujourd'hui" : (day===addDays(t,-1) ? 'Hier' : fmtDay(day));
+  var sub=$('#daySub');
+  if(day===t) sub.textContent=fmtDay(day);
+  else sub.innerHTML=(day===addDays(t,-1) ? esc(fmtDay(day))+'&nbsp;·&nbsp;' : '')+'<button type="button" class="linkbtn" id="todayBtn">Revenir à aujourd\'hui</button>';
+  $('#nextDay').disabled = day>=t;
+
+  var meals=S.meals.filter(function(m){ return m.date===day; }).sort(byAt);
+  var nBad=0, nOk=0, entries=[];
+  meals.forEach(function(m){
+    var fl=mealFlags(m);
+    var b=fl.filter(function(f){ return f && f.kind!=='ok'; }).length;
+    nBad+=b; nOk+=fl.filter(function(f){ return f && f.kind==='ok'; }).length;
+    entries.push({key:m.time+'1',meal:m,flags:fl,bad:b});
+  });
+  if(meals.length) groupTimed(S.rules.timed).forEach(function(g){ entries.push({key:g.after+'0',cut:g}); });
+  entries.sort(function(a,b){ return a.key<b.key ? -1 : a.key>b.key ? 1 : 0; });
+
+  var stats=$('#dayStats');
+  if(meals.length){
+    stats.innerHTML='<span class="stat">'+plural(meals.length,'repas','repas')+'</span>'+
+      (nOk ? '<span class="stat">'+plural(nOk,'aliment conseillé','aliments conseillés')+'</span>' : '')+
+      (nBad ? '<span class="stat bad">'+plural(nBad,'écart','écarts')+'</span>' : '<span class="stat ok">Aucun écart</span>');
+  } else stats.innerHTML='';
+
+  var wk=$('#weekStats');
+  if(S.rules.weekly.length && S.mealsLoaded){
+    var ws=weekStartOf(day);
+    wk.innerHTML='<span class="wk-label">Semaine du '+esc(fmtLong(ws,false))+'</span>'+S.rules.weekly.map(function(r){
+      var c=weeklyCount(r,ws), cls=c>r.max ? 'bad' : c===r.max ? 'full' : '';
+      return '<span class="stat '+cls+'">'+esc(r.label)+' <b>'+c+'/'+r.max+'</b></span>';
+    }).join('');
+    wk.hidden=false;
+  } else wk.hidden=true;
+
+  var menu=$('#menuBox');
+  menu.hidden=!S.rules.notes;
+  $('#menuText').textContent=S.rules.notes;
+
+  var tl=$('#timeline');
+  tl.hidden=!meals.length;
+  tl.innerHTML=entries.map(function(e){
+    if(e.cut) return '<li class="tl-cut"><span class="cut-text"><span class="bt">'+esc(fmtTime(e.cut.after))+'</span> · plus de '+esc(shortList(e.cut.names,4))+'</span><span class="cut-line" aria-hidden="true"></span></li>';
+    var m=e.meal;
+    var items=m.items.map(function(it,i){
+      var f=e.flags[i];
+      return '<li><span class="iname">'+esc(it.name)+(f ? ' <span class="tag '+f.kind+'">'+esc(f.label)+'</span>' : '')+'</span><span class="qty">'+esc(fmtQty(it.qty,it.unit))+'</span></li>';
+    }).join('');
+    return '<li class="tl-meal'+(e.bad?' has-bad':'')+'"><button type="button" class="meal-card" data-id="'+esc(m.id)+'"'+(S.readOnly?' aria-disabled="true"':' aria-label="Modifier : '+esc(TYPE_LABEL[m.type])+' de '+esc(fmtTime(m.time))+'"')+'>'+
+      '<div class="meal-head"><span class="time">'+esc(fmtTime(m.time))+'</span><span class="mtype">'+esc(TYPE_LABEL[m.type])+'</span>'+(e.bad?'<span class="tag bad">'+plural(e.bad,'écart','écarts')+'</span>':'')+'</div>'+
+      '<ul class="items">'+items+'</ul>'+(m.note?'<p class="note">'+esc(m.note)+'</p>':'')+'</button></li>';
+  }).join('');
+
+  var empty=$('#dayEmpty');
+  empty.hidden=!!meals.length;
+  if(!meals.length){
+    var rulesEmpty=rulesIsEmpty(S.rules);
+    if(!S.mealsLoaded || S.mode==='connecting'){ $('#emptyTitle').textContent='Ouverture du carnet…'; $('#emptyText').textContent="Les repas notés apparaîtront ici, dans l'ordre de la journée."; $('#goRules').hidden=true; }
+    else {
+      $('#emptyTitle').textContent = day===t ? "Rien de noté aujourd'hui" : 'Rien de noté ce jour-là';
+      $('#emptyText').textContent = S.readOnly ? 'Aucun repas enregistré pour ce jour.' : "Appuie sur « Noter un repas » pour ajouter ce qui a été mangé, avec les quantités et l'heure.";
+      $('#goRules').hidden = S.readOnly || !rulesEmpty;
+    }
+  }
+  renderBanner();
+}
+function renderBanner(){
+  var el=$('#cutoffBanner');
+  if(UI.day!==today() || !S.rules.timed.length){ el.hidden=true; return; }
+  var now=nowHM(), groups=groupTimed(S.rules.timed);
+  var active=groups.filter(function(g){ return isLate(now,g.after); });
+  var next=groups.filter(function(g){ return !isLate(now,g.after); })[0];
+  var html='';
+  active.forEach(function(g){ html+='<p>Depuis <span class="bt">'+esc(fmtTime(g.after))+'</span>, évite : '+esc(shortList(g.names,6))+'.</p>'; });
+  if(next) html+='<p>À partir de <span class="bt">'+esc(fmtTime(next.after))+'</span>, évite : '+esc(shortList(next.names,6))+'.</p>';
+  el.className='banner'+(active.length?' active':'');
+  el.innerHTML=html; el.hidden=!html;
+}
+function daysMap(){
+  var m={}; S.meals.forEach(function(x){ (m[x.date]=m[x.date]||[]).push(x); }); return m;
+}
+function renderHistory(){
+  var m=daysMap(), dates=Object.keys(m).sort().reverse();
+  $('#histEmpty').hidden = !!dates.length || !S.mealsLoaded;
+  $('#histList').innerHTML=dates.map(function(d){
+    var meals=m[d].sort(byAt), bad=0, foods=[];
+    meals.forEach(function(x){ mealFlags(x).forEach(function(f){ if(f && f.kind!=='ok') bad++; }); x.items.forEach(function(i){ foods.push(i.name); }); });
+    var t=today(), label = d===t ? "Aujourd'hui" : d===addDays(t,-1) ? 'Hier' : fmtShort(d);
+    return '<li><button type="button" class="hist-row" data-day="'+esc(d)+'"><span class="hist-date">'+esc(label)+'</span><span class="hist-meta">'+plural(meals.length,'repas','repas')+(bad?' <span class="tag bad">'+plural(bad,'écart','écarts')+'</span>':'')+'</span><span class="hist-foods">'+esc(foods.join(', '))+'</span></button></li>';
+  }).join('');
+}
+function renderRecap(){
+  var n=UI.recapDays, end=today(), start=addDays(end,-(n-1));
+  UI.recapStart=start; UI.recapEnd=end;
+  ['7','14','30'].forEach(function(v){ $('#rd'+v).checked = (String(n)===v); });
+  $('#recapRange').textContent='Du '+fmtLong(start,start.slice(0,4)!==end.slice(0,4))+' au '+fmtLong(end,true);
+  var meals=S.meals.filter(function(m){ return m.date>=start && m.date<=end; }).sort(byAt);
+  var days={}, ecarts=[], foods={};
+  meals.forEach(function(m){
+    days[m.date]=1;
+    mealFlags(m).forEach(function(f,i){
+      var it=m.items[i];
+      if(f && f.kind!=='ok') ecarts.push({m:m,it:it,f:f});
+      var k=words(it.name).join(' ');
+      if(!k) return;
+      if(!foods[k]) foods[k]={name:it.name,count:0};
+      foods[k].name=it.name; foods[k].count++;
+    });
+  });
+  var nDays=Object.keys(days).length;
+  $('#kDays').textContent=nDays+'/'+n;
+  $('#kDaysL').textContent = nDays>1 ? 'jours notés' : 'jour noté';
+  $('#kMeals').textContent=meals.length;
+  $('#kEcarts').textContent=ecarts.length;
+  $('#kEcartsBox').className='kpi'+(ecarts.length?' bad':'');
+  $('#ecartNone').hidden=!!ecarts.length;
+  $('#ecartList').innerHTML=ecarts.slice().reverse().map(function(e){
+    return '<li><span class="r-main">'+esc(e.it.name)+' <span class="tag '+e.f.kind+'">'+esc(e.f.label)+'</span></span><span class="r-when">'+esc(fmtShort(e.m.date))+' · '+esc(fmtTime(e.m.time))+'</span></li>';
+  }).join('');
+  var wl=[];
+  if(S.rules.weekly.length) for(var ws=weekStartOf(start); ws<=end; ws=addDays(ws,7)){
+    wl.push('<li><span class="r-main">'+S.rules.weekly.map(function(r){ var c=weeklyCount(r,ws); return esc(r.label)+' <b class="'+(c>r.max?'over':'')+'">'+c+'/'+r.max+'</b>'; }).join(' · ')+'</span><span class="r-when">sem. du '+esc(fmtLong(ws,false))+'</span></li>');
+  }
+  $('#weeklyRecap').innerHTML=wl.join('');
+  $('#weeklyRecapBox').hidden=!wl.length;
+  var top=Object.keys(foods).map(function(k){ return foods[k]; }).sort(function(a,b){ return b.count-a.count || a.name.localeCompare(b.name,'fr'); }).slice(0,8);
+  $('#topNone').hidden=!!top.length;
+  $('#topList').innerHTML=top.map(function(f){ return '<li><span class="r-main">'+esc(f.name)+'</span><span class="cnt">× '+f.count+'</span></li>'; }).join('');
+  $('#recapText').textContent=recapText(start,end,meals,nDays,n,ecarts.length);
+}
+function recapText(start,end,meals,nDays,n,nEcarts){
+  var L=['Carnet alimentaire : du '+fmtLong(start,start.slice(0,4)!==end.slice(0,4))+' au '+fmtLong(end,true),''];
+  var by={}; meals.forEach(function(m){ (by[m.date]=by[m.date]||[]).push(m); });
+  for(var d=start; d<=end; d=addDays(d,1)){
+    L.push(fmtDay(d));
+    var list=by[d]||[];
+    if(!list.length) L.push('  (rien de noté)');
+    list.forEach(function(m){
+      var fl=mealFlags(m);
+      L.push('  '+fmtTime(m.time)+' · '+TYPE_LABEL[m.type]+' : '+m.items.map(function(i){ var q=fmtQty(i.qty,i.unit); return i.name+(q?' '+q:''); }).join(', '));
+      fl.forEach(function(f,i){ if(f && f.kind!=='ok') L.push('    écart : '+m.items[i].name+' ('+reasonText(f)+')'); });
+      if(m.note) L.push('    remarque : '+m.note);
+    });
+    L.push('');
+  }
+  if(S.rules.weekly.length){
+    L.push('Limites par semaine :');
+    for(var ws=weekStartOf(start); ws<=end; ws=addDays(ws,7)){
+      L.push('  semaine du '+fmtLong(ws,false)+' : '+S.rules.weekly.map(function(r){ return r.label.toLowerCase()+' '+weeklyCount(r,ws)+'/'+r.max; }).join(', '));
+    }
+    L.push('');
+  }
+  L.push('Bilan : '+plural(nDays,'jour noté','jours notés')+' sur '+n+', '+plural(meals.length,'repas','repas')+', '+plural(nEcarts,'écart','écarts')+'.');
+  return L.join('\n');
+}
+function chipsHtml(list,kind){
+  return list.map(function(n,i){ return '<span class="chip"><span>'+esc(n)+'</span>'+(S.readOnly?'':'<button type="button" data-kind="'+kind+'" data-idx="'+i+'" aria-label="Retirer '+esc(n)+'">×</button>')+'</span>'; }).join('');
+}
+function groupChips(items,kind){
+  return items.map(function(x){ return '<span class="chip"><span>'+esc(x.name)+'</span>'+(S.readOnly?'':'<button type="button" data-kind="'+kind+'" data-idx="'+x.idx+'" aria-label="Retirer '+esc(x.name)+'">×</button>')+'</span>'; }).join('');
+}
+function renderRules(){
+  var R=S.rules;
+  $('#preferChips').innerHTML=chipsHtml(R.prefer,'prefer'); $('#preferNone').hidden=!!R.prefer.length;
+  $('#avoidChips').innerHTML=chipsHtml(R.avoid,'avoid'); $('#avoidNone').hidden=!!R.avoid.length;
+  var tg={}; R.timed.forEach(function(t,i){ (tg[t.after]=tg[t.after]||[]).push({name:t.name,idx:i}); });
+  $('#timedList').innerHTML=Object.keys(tg).sort().map(function(a){
+    return '<div class="rgroup"><span class="tpill">dès '+esc(fmtTime(a))+'</span><div class="chips">'+groupChips(tg[a],'timed')+'</div></div>';
+  }).join('');
+  $('#timedNone').hidden=!!R.timed.length;
+  $('#mealGroups').innerHTML=groupByMeal(R.byMeal).map(function(g){
+    return '<div class="rgroup"><span class="tpill meal">'+esc(TYPE_LABEL[g.type])+'</span><div class="chips">'+groupChips(g.items,'byMeal')+'</div></div>';
+  }).join('');
+  $('#mealNone').hidden=!!R.byMeal.length;
+  $('#weeklyList').innerHTML=R.weekly.map(function(x,i){
+    return '<li><span class="r-main"><b>'+esc(x.label)+'</b> : '+x.max+' fois maximum par semaine'+(x.type?' '+esc(MEAL_AT[x.type]):'')+'<br><small class="wnames">'+esc(x.names.join(', '))+'</small></span>'+(S.readOnly?'<span></span>':'<button type="button" class="iconbtn sm" data-kind="weekly" data-idx="'+i+'" aria-label="Retirer la limite '+esc(x.label)+'">×</button>')+'</li>';
+  }).join('');
+  $('#weeklyNone').hidden=!!R.weekly.length;
+  var notes=$('#notesInput');
+  if(document.activeElement!==notes) notes.value=R.notes;
+  $('#roNote').hidden=!S.readOnly;
+  ['#preferForm','#avoidForm','#timedForm','#mealRuleForm','#weeklyForm'].forEach(function(f){ $(f).hidden=S.readOnly; });
+  notes.readOnly=S.readOnly;
+}
+
+/* ---------- Fiche repas ---------- */
+function frequentFoods(){
+  var map={}, order=[];
+  S.meals.slice().sort(byAt).reverse().forEach(function(m){
+    m.items.forEach(function(it){
+      var k=words(it.name).join(' '); if(!k) return;
+      if(!map[k]){ map[k]={name:it.name,qty:it.qty,unit:it.unit,count:0}; order.push(k); }
+      map[k].count++;
+    });
+  });
+  return order.map(function(k){ return map[k]; }).filter(function(f){ return f.count>1; }).sort(function(a,b){ return b.count-a.count; }).slice(0,8);
+}
+function renderTypes(sel){
+  var fs=$('#fTypes'), legend=fs.querySelector('legend');
+  fs.innerHTML=''; fs.appendChild(legend);
+  TYPES.forEach(function(t){
+    var l=document.createElement('label');
+    l.innerHTML='<input type="radio" name="mtype" id="ft-'+t[0]+'" value="'+t[0]+'"'+(t[0]===sel?' checked':'')+'><span>'+esc(t[1])+'</span>';
+    fs.appendChild(l);
+  });
+}
+function addRow(it){
+  it=it||{name:'',qty:'',unit:'g'};
+  var unit = (it.unit===undefined || it.unit===null) ? 'g' : it.unit;
+  var n=++UI.rowSeq, row=document.createElement('div');
+  row.className='item-row';
+  row.innerHTML='<input class="input i-name" id="row'+n+'-name" list="foodList" autocomplete="off" placeholder="Aliment (ex. riz complet)" aria-label="Aliment" value="'+esc(it.name)+'">'+
+    '<input class="input i-qty" id="row'+n+'-qty" inputmode="decimal" placeholder="Qté" aria-label="Quantité" value="'+esc(it.qty)+'">'+
+    '<select class="input i-unit" id="row'+n+'-unit" aria-label="Unité">'+UNITS.map(function(u){ return '<option value="'+esc(u)+'"'+(u===unit?' selected':'')+'>'+esc(u||'sans unité')+'</option>'; }).join('')+'</select>'+
+    '<button type="button" class="iconbtn sm i-del" aria-label="Retirer cet aliment">×</button>'+
+    '<div class="i-flag" aria-live="polite"></div>';
+  $('#fItems').appendChild(row);
+  updateRowFlag(row);
+  return row;
+}
+function updateRowFlag(row){
+  var name=row.querySelector('.i-name').value;
+  var te=document.querySelector('#fTypes input:checked');
+  var f=checkItem(name,$('#fTime').value,S.rules,te?te.value:'');
+  row.querySelector('.i-flag').innerHTML = f ? '<span class="tag '+f.kind+'">'+esc(f.label)+'</span> '+esc(whyText(f)) : '';
+}
+function updateAllFlags(){ document.querySelectorAll('#fItems .item-row').forEach(updateRowFlag); }
+function collectItems(){
+  var out=[];
+  document.querySelectorAll('#fItems .item-row').forEach(function(r){
+    var name=r.querySelector('.i-name').value.trim().replace(/\s+/g,' ');
+    if(!name) return;
+    out.push({name:name.slice(0,120),qty:r.querySelector('.i-qty').value.trim().slice(0,20),unit:r.querySelector('.i-unit').value});
+  });
+  return out;
+}
+function renderQuick(){
+  var q=frequentFoods(), el=$('#quickFoods');
+  if(!q.length){ el.innerHTML=''; return; }
+  el.innerHTML='<span class="flabel" style="width:100%">Souvent notés</span>'+q.map(function(f,i){
+    var qt=fmtQty(f.qty,f.unit);
+    return '<button type="button" class="qchip" data-q="'+i+'">'+esc(f.name)+(qt?' <small>'+esc(qt)+'</small>':'')+'</button>';
+  }).join('');
+  el._foods=q;
+}
+function openSheet(meal){
+  if(S.readOnly || S.mode==='connecting') return;
+  UI.lastFocus=document.activeElement;
+  UI.editing = meal ? meal.id : null;
+  UI.typeTouched = !!meal;
+  $('#sheetTitle').textContent = meal ? 'Modifier le repas' : 'Noter un repas';
+  var date = meal ? meal.date : (UI.day || today());
+  var time = meal ? meal.time : nowHM();
+  $('#fDate').value=date; $('#fDate').max=today();
+  $('#fTime').value=time;
+  renderTypes(meal ? meal.type : guessType(time));
+  $('#fItems').innerHTML='';
+  (meal && meal.items.length ? meal.items : [null]).forEach(function(it){ addRow(it); });
+  $('#fNote').value = meal ? meal.note : '';
+  $('#formError').hidden=true;
+  $('#deleteBtn').hidden=!meal;
+  $('#deleteConfirm').hidden=true;
+  renderQuick();
+  $('#sheet').hidden=false;
+  document.body.style.overflow='hidden';
+  $('#mealForm').scrollTop=0;
+  $('#mealForm').focus();
+}
+function closeSheet(){
+  $('#sheet').hidden=true;
+  document.body.style.overflow='';
+  UI.editing=null;
+  if(UI.lastFocus && document.contains(UI.lastFocus)) try{ UI.lastFocus.focus(); }catch(e){}
+  if(UI.reloadOnClose){ UI.reloadOnClose=false; setTimeout(function(){ location.reload(); },1200); }
+}
+
+/* ---------- Divers ---------- */
+var toastTimer=null;
+function toast(msg){
+  var t=$('#toast'); t.textContent=msg; t.hidden=false;
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){ t.hidden=true; },2800);
+}
+function switchTab(tab,silent){
+  UI.tab=tab;
+  ['journal','history','recap','rules'].forEach(function(v){ $('#view-'+v).hidden = v!==tab; });
+  document.querySelectorAll('.tab').forEach(function(b){ if(b.dataset.tab===tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+  if(!silent) window.scrollTo(0,0);
+  renderAll();
+}
+function splitNames(v){ return v.split(/[,;\n]+/).map(function(s){ return s.trim().replace(/\s+/g,' ').slice(0,80); }).filter(Boolean); }
+function addRuleNames(kind,names){
+  var R=cloneRules(), list=R[kind], keys={};
+  list.forEach(function(n){ keys[norm(n)]=1; });
+  names.forEach(function(n){ if(!keys[norm(n)]){ list.push(n); keys[norm(n)]=1; } });
+  setRules(R);
+}
+function bindEvents(){
+  document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click',function(){ switchTab(b.dataset.tab); }); });
+  $('#prevDay').addEventListener('click',function(){ UI.day=addDays(UI.day,-1); renderJournal(); });
+  $('#nextDay').addEventListener('click',function(){ if(UI.day<today()){ UI.day=addDays(UI.day,1); renderJournal(); } });
+  $('#daySub').addEventListener('click',function(e){ if(e.target.id==='todayBtn'){ UI.day=today(); renderJournal(); } });
+  $('#goRules').addEventListener('click',function(){ switchTab('rules'); });
+  $('#timeline').addEventListener('click',function(e){
+    var b=e.target.closest('.meal-card'); if(!b || S.readOnly) return;
+    var m=S.meals.find(function(x){ return x.id===b.dataset.id; }); if(m) openSheet(m);
+  });
+  $('#addBtn').addEventListener('click',function(){ openSheet(null); });
+
+  document.querySelectorAll('#sheet [data-close]').forEach(function(b){ b.addEventListener('click',closeSheet); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && !$('#sheet').hidden) closeSheet(); });
+  $('#addItemBtn').addEventListener('click',function(){ addRow().querySelector('.i-name').focus(); });
+  $('#fItems').addEventListener('input',function(e){ if(e.target.classList.contains('i-name')) updateRowFlag(e.target.closest('.item-row')); });
+  $('#fItems').addEventListener('click',function(e){
+    var b=e.target.closest('.i-del'); if(!b) return;
+    var rows=document.querySelectorAll('#fItems .item-row'), row=b.closest('.item-row');
+    if(rows.length>1) row.remove();
+    else { row.querySelector('.i-name').value=''; row.querySelector('.i-qty').value=''; updateRowFlag(row); }
+  });
+  $('#fTime').addEventListener('change',function(){
+    var t=$('#fTime').value;
+    if(t && !UI.typeTouched){ var g=guessType(t), r=$('#ft-'+g); if(r) r.checked=true; }
+    updateAllFlags();
+  });
+  $('#fTypes').addEventListener('change',function(){ UI.typeTouched=true; updateAllFlags(); });
+  $('#quickFoods').addEventListener('click',function(e){
+    var b=e.target.closest('.qchip'); if(!b) return;
+    var f=$('#quickFoods')._foods[+b.dataset.q]; if(!f) return;
+    var rows=document.querySelectorAll('#fItems .item-row'), last=rows[rows.length-1], row;
+    if(last && !last.querySelector('.i-name').value.trim()){
+      row=last; row.querySelector('.i-name').value=f.name; row.querySelector('.i-qty').value=f.qty; row.querySelector('.i-unit').value=f.unit; updateRowFlag(row);
+    } else row=addRow({name:f.name,qty:f.qty,unit:f.unit});
+    $('#formError').hidden=true;
+  });
+  $('#mealForm').addEventListener('submit',async function(e){
+    e.preventDefault();
+    var items=collectItems();
+    if(!items.length){ var er=$('#formError'); er.textContent='Ajoute au moins un aliment.'; er.hidden=false; return; }
+    var date=$('#fDate').value || today(), time=$('#fTime').value || nowHM();
+    if(date>today()) date=today();
+    var typeEl=document.querySelector('#fTypes input:checked');
+    var meal={date:date,time:time,at:date+'T'+time,type:typeEl?typeEl.value:guessType(time),items:items,note:$('#fNote').value.trim().slice(0,1000),updatedAt:new Date().toISOString()};
+    var wasEditing=!!UI.editing, id=UI.editing || newId();
+    closeSheet();
+    UI.day=date;
+    if(UI.tab!=='journal') switchTab('journal'); else renderJournal();
+    var ok=await saveMeal(id,meal);
+    if(ok) toast(wasEditing ? 'Repas modifié' : 'Repas enregistré');
+  });
+  $('#deleteBtn').addEventListener('click',function(){ $('#deleteConfirm').hidden=false; $('#deleteYes').focus(); });
+  $('#deleteNo').addEventListener('click',function(){ $('#deleteConfirm').hidden=true; });
+  $('#deleteYes').addEventListener('click',async function(){
+    var id=UI.editing; if(!id) return;
+    closeSheet();
+    var ok=await deleteMeal(id);
+    if(ok) toast('Repas supprimé');
+  });
+
+  $('#histList').addEventListener('click',function(e){
+    var b=e.target.closest('.hist-row'); if(!b) return;
+    UI.day=b.dataset.day; switchTab('journal');
+  });
+
+  $('#recapSeg').addEventListener('change',function(e){ if(e.target.name==='recapDays'){ UI.recapDays=+e.target.value; renderRecap(); } });
+  $('#copyBtn').addEventListener('click',function(){
+    var pre=$('#recapText'), txt=pre.textContent;
+    function fallback(){
+      try{ var r=document.createRange(); r.selectNodeContents(pre); var s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }catch(e){}
+      toast('Texte sélectionné : copie-le avec le menu du téléphone');
+    }
+    try{ navigator.clipboard.writeText(txt).then(function(){ toast('Texte copié'); },fallback); }catch(e){ fallback(); }
+  });
+  $('#dlBtn').addEventListener('click',function(){
+    saveFile('carnet-alimentaire-'+UI.recapStart+'-au-'+UI.recapEnd+'.txt',$('#recapText').textContent,'text/plain').then(function(r){
+      if(r==='failed') toast("Impossible de créer le fichier : utilise « Copier le texte ».");
+    });
+  });
+
+  $('#rulesUpdateYes').addEventListener('click',function(){ answerRulesUpdate(true); });
+  $('#rulesUpdateNo').addEventListener('click',function(){ answerRulesUpdate(false); });
+
+  $('#backupBtn').addEventListener('click',function(){
+    var snap=snapshot(); snap.exportedAt=new Date().toISOString();
+    saveFile('carnet-alimentaire-copie-'+today()+'.json',JSON.stringify(snap),'application/json').then(function(r){
+      if(r==='shared' || r==='downloaded'){ S.lastBackup=new Date().toISOString(); persistLocal(); renderStatus(); toast('Copie prête'); }
+      else if(r==='failed') toast('Impossible de créer la copie sur ce téléphone.');
+    });
+  });
+  $('#restoreInput').addEventListener('change',function(e){
+    var f=e.target.files && e.target.files[0];
+    if(!f) return;
+    if(f.size>5e6){ e.target.value=''; toast("Ce fichier est trop gros pour être une copie du carnet."); return; }
+    var rd=new FileReader();
+    rd.onload=function(){
+      e.target.value='';
+      var d=null; try{ d=JSON.parse(rd.result); }catch(err){}
+      if(!d || d.app!=='carnet-alimentaire' || !Array.isArray(d.meals)){ toast("Ce fichier n'est pas une copie du carnet."); return; }
+      var meals=d.meals.map(function(m){ return normalizeMeal(m&&m.id,m); }).filter(Boolean);
+      UI.pendingRestore={meals:meals,rules:normalizeRules(d.rules),rulesVersion:+d.rulesVersion||0,rulesEdited:!!d.rulesEdited};
+      var when='';
+      if(typeof d.exportedAt==='string'){ var dt=new Date(d.exportedAt); if(!isNaN(dt)) when=dt.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}); }
+      $('#restoreText').textContent='Copie'+(when?' du '+when:'')+' : '+plural(meals.length,'repas','repas')+'. Les repas déjà sur ce téléphone sont gardés, et les règles sont remplacées par celles de la copie.';
+      $('#restoreConfirm').hidden=false;
+      $('#restoreYes').focus();
+    };
+    rd.onerror=function(){ e.target.value=''; toast('Impossible de lire ce fichier.'); };
+    rd.readAsText(f);
+  });
+  $('#restoreNo').addEventListener('click',function(){ UI.pendingRestore=null; $('#restoreConfirm').hidden=true; });
+  $('#restoreYes').addEventListener('click',function(){
+    var p=UI.pendingRestore; if(!p) return;
+    var byId={}; S.meals.forEach(function(m){ byId[m.id]=m; });
+    var added=0;
+    p.meals.forEach(function(m){
+      var cur=byId[m.id];
+      if(!cur){ byId[m.id]=m; added++; }
+      else if((m.updatedAt||'')>(cur.updatedAt||'')) byId[m.id]=m;
+    });
+    S.meals=Object.keys(byId).map(function(k){ return byId[k]; });
+    if(!rulesIsEmpty(p.rules)){ S.rules=p.rules; S.rulesVersion=p.rulesVersion; S.rulesEdited=p.rulesEdited; S.pendingRulesUpdate=false; }
+    UI.pendingRestore=null; $('#restoreConfirm').hidden=true;
+    persistLocal(); renderAll();
+    toast('Copie restaurée : '+plural(added,'repas ajouté','repas ajoutés'));
+  });
+
+  $('#preferForm').addEventListener('submit',function(e){ e.preventDefault(); var i=$('#preferInput'), n=splitNames(i.value); if(n.length){ addRuleNames('prefer',n); i.value=''; } });
+  $('#avoidForm').addEventListener('submit',function(e){ e.preventDefault(); var i=$('#avoidInput'), n=splitNames(i.value); if(n.length){ addRuleNames('avoid',n); i.value=''; } });
+  $('#timedForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var i=$('#timedInput'), t=$('#timedTime').value, n=splitNames(i.value);
+    if(!n.length) return;
+    if(!/^\d\d:\d\d$/.test(t)){ toast("Choisis l'heure à partir de laquelle ces aliments sont à éviter."); return; }
+    var R=cloneRules(), keys={}; n.forEach(function(x){ keys[norm(x)]=1; });
+    R.timed=R.timed.filter(function(x){ return !keys[norm(x.name)]; });
+    n.forEach(function(x){ R.timed.push({name:x,after:t}); });
+    setRules(R); i.value='';
+  });
+  $('#mealRuleForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var i=$('#mealRuleInput'), type=mealType($('#mealRuleType').value), n=splitNames(i.value);
+    if(!n.length || !type) return;
+    var R=cloneRules(), keys={};
+    R.byMeal.forEach(function(b){ if(b.type===type) keys[norm(b.name)]=1; });
+    n.forEach(function(x){ if(!keys[norm(x)]){ R.byMeal.push({name:x,type:type}); keys[norm(x)]=1; } });
+    setRules(R); i.value='';
+  });
+  $('#weeklyForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var i=$('#weeklyInput'), n=splitNames(i.value), max=parseInt($('#weeklyMax').value,10), type=mealType($('#weeklyType').value);
+    if(!n.length) return;
+    if(!(max>0)){ toast('Indique le nombre de fois maximum par semaine.'); return; }
+    var R=cloneRules();
+    R.weekly.push({label:cap(n[0])+(type?' '+MEAL_AT[type]:''),names:n,max:Math.min(99,max),type:type});
+    setRules(R); i.value='';
+  });
+  $('#view-rules').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-kind]'); if(!b || S.readOnly) return;
+    var R=cloneRules(), k=b.dataset.kind, idx=+b.dataset.idx;
+    if(!R[k] || idx<0 || idx>=R[k].length) return;
+    R[k].splice(idx,1); setRules(R);
+  });
+  $('#notesInput').addEventListener('change',function(){
+    var v=$('#notesInput').value.slice(0,12000);
+    if(v!==S.rules.notes){ var R=cloneRules(); R.notes=v; setRules(R); toast('Consignes enregistrées'); }
+  });
+
+  setInterval(function(){ if(UI.tab==='journal' && UI.day===today()) renderBanner(); },60000);
+}
+
+init();
+})();
+</script>
+</body>
+</html>

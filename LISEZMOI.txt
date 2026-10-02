@@ -1,0 +1,23 @@
+CARNET ALIMENTAIRE (version autonome)
+
+MISE EN LIGNE (une seule fois)
+1. Envoyer tout le contenu de ce dossier sur un hébergement en HTTPS (obligatoire pour le mode hors connexion).
+   Exemples : https://carnet.ton-domaine.fr/  ou  https://ton-domaine.fr/carnet/
+2. Ne plus jamais changer cette adresse : les repas de Melissa sont liés à elle.
+
+SUR LE TÉLÉPHONE DE MELISSA (une seule fois)
+- iPhone : ouvrir le lien dans Safari > bouton Partager > « Sur l'écran d'accueil ».
+- Android : ouvrir le lien dans Chrome > menu ⋮ > « Ajouter à l'écran d'accueil » (ou « Installer l'application »).
+Ensuite elle ouvre le carnet depuis l'icône, même sans réseau.
+
+FAIRE UNE MODIFICATION
+Ce dépôt GitHub est relié au site Netlify carnet-melissa : chaque envoi sur la branche main est mis en ligne automatiquement.
+1. Modifier les fichiers et les envoyer sur main.
+2. Dans sw.js, augmenter la valeur VERSION (ex. 2026-10-02-1 -> 2026-10-15-1).
+Le téléphone récupère la nouvelle version la prochaine fois que le carnet est ouvert avec du réseau. Ses repas sont conservés.
+Les règles de la nutritionniste sont dans index.html (DEFAULT_RULES). Si tu les changes, augmente aussi RULES_VERSION :
+si Melissa n'a pas modifié ses règles, elles sont remplacées automatiquement ; sinon l'appli lui propose de les remplacer.
+
+SAUVEGARDE
+Les données restent sur le téléphone. Onglet Règles > Sauvegarde : « Sauvegarder une copie » crée un fichier à garder
+(Fichiers, mail…), « Restaurer une copie » le recharge sur un nouveau téléphone.
